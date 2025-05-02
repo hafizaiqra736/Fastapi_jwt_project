@@ -1,26 +1,37 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Integer, String, ForeignKey, DateTime
+from ..config.database import Base
+import datetime
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
-from src.config.database import Base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import mapped_column, Mapped
+
+Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    tasks = relationship("Task", back_populates="owner")
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(nullable=False)
+
+    # One user has many tasks
+    tasks: Mapped[list["Task"]] = relationship(back_populates="owner")
+
 
 class Task(Base):
     __tablename__ = "tasks"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    description = Column(String)
-    status = Column(String, default="pending")
-    due_date = Column(DateTime)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    user_id = Column(Integer, ForeignKey("users.id"))
 
-    owner = relationship("User", back_populates="tasks")
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
+
+    # Foreign key to User table
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    
+    # Relationship back to User
+    owner: Mapped["User"] = relationship(back_populates="tasks")
+
